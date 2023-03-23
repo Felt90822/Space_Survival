@@ -1,8 +1,8 @@
 import pygame
 import random
 
-WIDTH = 900
-HEIGHT = 900
+WIDTH = 800
+HEIGHT = 800
 
 GREEN = (0, 255, 0)
 WHITE = (255, 255, 255)
@@ -12,10 +12,12 @@ BLACK = (0, 0, 0)
 
 #玩家
 class Player(pygame.sprite.Sprite):
-    def __init__(self):
+    def __init__(self, img):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.Surface((50, 40))
-        self.image.fill(GREEN)
+        self.image = img
+        self.image.set_colorkey(BLACK)
+        #self.image = pygame.Surface((50, 40))
+        #self.image.fill(GREEN)
         self.rect = self.image.get_rect()
         self.rect.centerx = WIDTH/2
         self.rect.bottom = HEIGHT - 10
@@ -43,10 +45,12 @@ class Player(pygame.sprite.Sprite):
 
 #俗投
 class Rock(pygame.sprite.Sprite):
-    def __init__(self):
+    def __init__(self, img):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.Surface((30, 30))
-        self.image.fill(RED)
+        self.image = img
+        self.image.set_colorkey(BLACK)
+        #self.image = pygame.Surface((30, 30))
+        #self.image.fill(RED)
         self.rect = self.image.get_rect()
         self.rect.x = random.randrange(0, WIDTH - self.rect.width)
         self.rect.y = random.randrange(-180, -150)
@@ -64,10 +68,12 @@ class Rock(pygame.sprite.Sprite):
 
 #子彈
 class Bullet(pygame.sprite.Sprite):
-    def __init__(self, x, y):
+    def __init__(self, x, y, img):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.Surface((10, 20))
-        self.image.fill(YELLOW)
+        #self.image = pygame.Surface((10, 30))
+        #self.image.fill(YELLOW)
+        self.image = img
+        self.image.set_colorkey(BLACK)
         self.rect = self.image.get_rect()
         self.rect.centerx = x
         self.rect.bottom = y

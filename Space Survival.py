@@ -25,9 +25,13 @@ rock_imgs = []
 for i in range(5):
     rock_imgs.append(pygame.image.load(os.path.join("Game_img", f"rock{i}.png")).convert())
 #載入玩家圖片
-player_img = pygame.image.load(os.path.join("Game_img", "player.png"))
+player_img = pygame.image.load(os.path.join("Game_img", "player.png")).convert()
 #載入子彈圖片
 bullet_img = pygame.image.load(os.path.join("Game_img", "bullet.png")).convert()
+#載入復活次數圖片
+lives_img = pygame.image.load(os.path.join("Game_img", "lives.png")).convert()
+lives_mini_img = pygame.transform.scale(lives_img, (30, 21))
+lives_mini_img.set_colorkey(BLACK)
 
 #設定字體
 font_name = os.path.join("font.ttf")
@@ -41,9 +45,10 @@ def new_rock():
          
 #發射子彈
 def shoot():
-    bullet = Bullet(player.rect.centerx, player.rect.top, bullet_img)
-    all_sprites.add(bullet)
-    bullets.add(bullet)
+    if not(player.hidden):
+        bullet = Bullet(player.rect.centerx, player.rect.top, bullet_img)
+        all_sprites.add(bullet)
+        bullets.add(bullet)
 
 #群組
 all_sprites = pygame.sprite.Group()
@@ -56,9 +61,9 @@ rocks = pygame.sprite.Group()
 for i in range(7):
     new_rock()
 
+score = 0
 running = True
 while running:
-
     clock.tick(FPS) #60次/秒
 
     #取得輸入
@@ -75,17 +80,27 @@ while running:
     #判斷石頭被擊中
     hits = pygame.sprite.groupcollide(rocks, bullets, True, True)
     for hit in hits:
+        score += hit.radius
         new_rock()
 
     #判斷石頭撞到飛船
     hits = pygame.sprite.spritecollide(player, rocks, True, pygame.sprite.collide_circle)
     for hit in hits:
         new_rock()
+        player.health -= (hit.radius-10)
+        #如果血量歸零
+        if player.health <= 0:
+            player.lives -= 1
+            player.health = 100
+            player.hide()
 
     #畫面顯示 
     screen.fill(BLACK)
     screen.blit(background, (0, 0))
     all_sprites.draw(screen)
+    draw_text(screen, str(score), 25, WIDTH/2, 10)
+    draw_health(screen, player.health, 5, 15)
+    draw_lives(screen, player.lives, lives_mini_img, WIDTH - 150, 20)
     pygame.display.update()
 
 pygame.quit()

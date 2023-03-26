@@ -32,6 +32,29 @@ bullet_img = pygame.image.load(os.path.join("Game_img", "bullet.png")).convert()
 lives_img = pygame.image.load(os.path.join("Game_img", "lives.png")).convert()
 lives_mini_img = pygame.transform.scale(lives_img, (30, 21))
 lives_mini_img.set_colorkey(BLACK)
+#載入護盾圖片
+shield_img = pygame.image.load(os.path.join("Game_img", "shield_img.png")).convert()
+ 
+#爆炸動畫
+expl_anim = {}
+expl_anim["lg"] = []
+expl_anim["sm"] = []
+expl_anim["player"] = []
+for i in range(9):
+    expl_img = pygame.image.load(os.path.join("Game_img", f"expl{i}.png")).convert()
+    expl_img.set_colorkey(BLACK)
+    expl_anim["lg"].append(pygame.transform.scale(expl_img, (90, 90)))
+    expl_anim["sm"].append(pygame.transform.scale(expl_img, (50, 50)))
+
+    player_expl_img = pygame.image.load(os.path.join("Game_img", f"player_expl{i}.png")).convert()
+    player_expl_img.set_colorkey(BLACK)
+    expl_anim["player"].append(player_expl_img)
+
+#寶物
+power_imgs = {}
+power_imgs["shield"] = pygame.image.load(os.path.join("Game_img", "shield.png")).convert()
+power_imgs["gun"] = pygame.image.load(os.path.join("Game_img", "gun.png")).convert()
+power_imgs["health"] = pygame.image.load(os.path.join("Game_img", "health.png")).convert()
 
 #設定字體
 font_name = os.path.join("font.ttf")
@@ -46,14 +69,52 @@ def new_rock():
 #發射子彈
 def shoot():
     if not(player.hidden):
-        bullet = Bullet(player.rect.centerx, player.rect.top, bullet_img)
-        all_sprites.add(bullet)
-        bullets.add(bullet)
+            if player.gun == 1:
+                bullet = Bullet(player.rect.centerx, player.rect.top, bullet_img)
+                all_sprites.add(bullet)
+                bullets.add(bullet)
+
+            elif player.gun >= 2:
+                bullet1 = Bullet(player.rect.left, player.rect.centery, bullet_img)
+                bullet2 = Bullet(player.rect.right, player.rect.centery, bullet_img)
+                all_sprites.add(bullet1)
+                all_sprites.add(bullet2)
+                bullets.add(bullet1)
+                bullets.add(bullet2)
+
+
+#爆炸動畫
+class Explosion(pygame.sprite.Sprite):
+    def __init__(self, center, size):
+        pygame.sprite.Sprite.__init__(self)
+        self.size = size
+        self.image = expl_anim[self.size][0]
+        self.rect = self.image.get_rect()
+        self.rect.center = center
+        self.frame = 0 #爆炸的第一張動畫
+        self.last_update = pygame.time.get_ticks() #最後一張圖片的時間
+        self.frame_rate = 50 #經過?毫秒後更新圖片
+
+    #操控
+    def update(self):
+        now = pygame.time.get_ticks()
+        if now - self.last_update > self.frame_rate: 
+            self.last_update = now
+            self.frame += 1
+            if self.frame == len(expl_anim[self.size]):
+                self.kill()
+            else:
+                self.image = expl_anim[self.size][self.frame]
+                center = self.rect.center
+                self.rect = self.image.get_rect()
+                self.rect.center = center
 
 #群組
 all_sprites = pygame.sprite.Group()
 player = Player(player_img)
 bullets = pygame.sprite.Group()
+powers = pygame.sprite.Group()
+shields = pygame.sprite.Group()
 all_sprites.add(player)
 
 #石頭的群組
@@ -81,6 +142,12 @@ while running:
     hits = pygame.sprite.groupcollide(rocks, bullets, True, True)
     for hit in hits:
         score += hit.radius
+        expl = Explosion(hit.rect.center, "lg")
+        all_sprites.add(expl)
+        if random.random() > 0.9: #回傳0-1隨機數字
+            power = Power(hit.rect.center, power_imgs)
+            all_sprites.add(power)
+            powers.add(power)
         new_rock()
 
     #判斷石頭撞到飛船
@@ -88,12 +155,40 @@ while running:
     for hit in hits:
         new_rock()
         player.health -= (hit.radius-10)
+        expl = Explosion(hit.rect.center, "sm")
+        all_sprites.add(expl)
         #如果血量歸零
         if player.health <= 0:
+            death_expl = Explosion(player.rect.center, "player")
+            all_sprites.add(death_expl)
             player.lives -= 1
             player.health = 100
             player.hide()
 
+    #判斷寶物是否擊中飛船
+    hits = pygame.sprite.spritecollide(player, powers, True)
+    for hit in hits:
+        if hit.type == "shield":
+            shield = SHIELD(shield_img, player.rect)
+            shield.power_on()
+            all_sprites.add(shield)
+            shields.add(shield)
+            
+        elif hit.type == "gun":
+            player.gunup()
+
+        elif hit.type == "health":
+            player.health += 20
+            if player.health > 100:
+                player.health = 100
+
+    #判斷護盾是否被擊中
+    hits = pygame.sprite.groupcollide(shields, rocks, True, True)
+    for hit in hits:
+        expl = Explosion(hit.rect.center, "lg")
+        all_sprites.add(expl)
+        new_rock()
+    
     #畫面顯示 
     screen.fill(BLACK)
     screen.blit(background, (0, 0))

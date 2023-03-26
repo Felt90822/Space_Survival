@@ -37,6 +37,8 @@ def draw_health(surf, hp, x, y): #平面, 血量, 座標
     BAR_LENGTH = 200 #生命條的長寬
     BAR_HEIGHT = 20
     fill = (hp/100)*BAR_LENGTH
+    if fill > BAR_LENGTH:
+        fill = BAR_LENGTH
     outline_rect = pygame.Rect(x, y, BAR_LENGTH, BAR_HEIGHT) #白色外框
     fill_ract = pygame.Rect(x, y, fill, BAR_HEIGHT) #綠色血條
     pygame.draw.rect(surf, GREEN, fill_ract)
@@ -54,7 +56,7 @@ class Player(pygame.sprite.Sprite):
         self.rect.centerx = WIDTH/2
         self.rect.bottom = HEIGHT - 10
         self.speed = 6 #速度
-        self.radius = 39 #半徑
+        self.radius = 38 #半徑
         self.health = 100 #血量
         self.lives = 3 #復活次數
         self.hidden = False #飛船是否隱藏
@@ -148,3 +150,44 @@ class Bullet(pygame.sprite.Sprite):
         self.rect.y += self.speedy
         if self.rect.bottom < 0:
             self.kill()
+
+#掉寶
+class Power(pygame.sprite.Sprite):
+    def __init__(self, center, power_imgs):
+        pygame.sprite.Sprite.__init__(self)
+        self.type = random.choice(['shield', 'gun', 'health'])
+        self.image = power_imgs[self.type]
+        self.image.set_colorkey(BLACK)             #顏色
+        self.rect = self.image.get_rect()      #定位
+        self.rect.center = center
+        self.speedy = 3                       #速度
+
+    #操控
+    def update(self):
+        self.rect.y += self.speedy
+        if self.rect.top > HEIGHT:
+            self.kill()
+
+#護盾
+class SHIELD(pygame.sprite.Sprite):
+    def __init__(self, img, rect):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = img
+        self.image.set_colorkey(BLACK)
+        self.rect = self.image.get_rect()
+        self.rect.center = (WIDTH/2, HEIGHT+500)
+        self.radius = 42 #護盾大小
+        self.time = 0 #持續時間
+        self.now = False
+        self.center = rect
+
+    def update(self):
+        now = pygame.time.get_ticks()
+        self.rect = self.center
+        if self.now and now - self.time > 5000:
+            self.kill()
+        
+
+    def power_on(self):
+        self.now = True
+        self.time = pygame.time.get_ticks()

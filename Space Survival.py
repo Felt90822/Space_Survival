@@ -34,6 +34,8 @@ lives_mini_img = pygame.transform.scale(lives_img, (30, 21))
 lives_mini_img.set_colorkey(BLACK)
 #載入護盾圖片
 shield_img = pygame.image.load(os.path.join("Game_img", "shield_img.png")).convert()
+#載入Boss預告
+boss_coming = pygame.image.load(os.path.join("Game_img", "boss_attact.png")).convert()
  
 #爆炸動畫
 expl_anim = {}
@@ -68,9 +70,9 @@ font_name = os.path.join("font.ttf")
 
 #新增石頭
 def new_rock(level):
+    img = random.choice(rock_imgs)
+    r = Rock(img)
     if level == 1:
-        img = random.choice(rock_imgs)
-        r = Rock(img)
         all_sprites.add(r)
         rocks.add(r)
          
@@ -89,67 +91,11 @@ def shoot():
                 all_sprites.add(bullet2)
                 bullets.add(bullet1)
                 bullets.add(bullet2)
-
-#計數器
-def count():
-    now = pygame.time.get_ticks()
-    if now / 4000 == 0:
-        Boss_show = True
-
-#爆炸動畫
-class Explosion(pygame.sprite.Sprite):
-    def __init__(self, center, size):
-        pygame.sprite.Sprite.__init__(self)
-        self.size = size
-        self.image = expl_anim[self.size][0]
-        self.rect = self.image.get_rect()
-        self.rect.center = center
-        self.frame = 0 #爆炸的第一張動畫
-        self.last_update = pygame.time.get_ticks() #最後一張圖片的時間
-        self.frame_rate = 50 #經過?毫秒後更新圖片
-
-    #操控
-    def update(self):
-        now = pygame.time.get_ticks()
-        if now - self.last_update > self.frame_rate: 
-            self.last_update = now
-            self.frame += 1
-            if self.frame == len(expl_anim[self.size]):
-                self.kill()
-            else:
-                self.image = expl_anim[self.size][self.frame]
-                center = self.rect.center
-                self.rect = self.image.get_rect()
-                self.rect.center = center
-
-#Boss動畫
-class Boss_anime(pygame.sprite.Sprite):
-    def __init__(self):
-        pygame.sprite.Sprite.__init__(self)
-        self.image = boss_anim[0]
-        self.rect = self.image.get_rect()
-        self.rect.center = (WIDTH-390, HEIGHT-690)
-        self.frame = 0 #爆炸的第一張動畫
-        self.last_update = pygame.time.get_ticks() #最後一張圖片的時間
-        self.frame_rate = 80 #經過?毫秒後更新圖片
-
-    #操控
-    def update(self):
-        now = pygame.time.get_ticks()
-        if now - self.last_update > self.frame_rate: 
-            self.last_update = now
-            self.frame += 1
-            if self.frame == len(boss_anim):
-                self.frame = 0
-            else:
-                self.image = boss_anim[self.frame]
-                center = self.rect.center
-                self.rect = self.image.get_rect()
-                self.rect.center = center
-                
+       
 #群組
 all_sprites = pygame.sprite.Group()
 player = Player(player_img)
+boss_animes =  Boss_anime(boss_anim)
 bullets = pygame.sprite.Group()
 powers = pygame.sprite.Group()
 shields = pygame.sprite.Group()
@@ -178,19 +124,24 @@ while running:
 
     #更新遊戲
     all_sprites.update()
-    
-    if level == 1 and Boss_show:
-        boss_animes =  Boss_anime()
+
+    if score > 200 and Boss_show:
+        level = 2
+        coming = BossComing(boss_coming)
+        all_sprites.add(coming) 
         all_sprites.add(boss_animes)
+        #boss = Boss()
+        #all_sprites.add(boss)
         Boss_show = False
-    if score > 500:
+    
+    if score > 1000:
         all_sprites.remove(boss_animes)
     
     #判斷石頭被擊中
     hits = pygame.sprite.groupcollide(rocks, bullets, True, True)
     for hit in hits:
         score += hit.radius
-        expl = Explosion(hit.rect.center, "lg")
+        expl = Explosion(hit.rect.center, "lg", expl_anim)
         all_sprites.add(expl)
         if random.random() > 0.9: #回傳0-1隨機數字
             power = Power(hit.rect.center, power_imgs)
@@ -203,11 +154,11 @@ while running:
     for hit in hits:
         new_rock(level)
         player.health -= (hit.radius-10)
-        expl = Explosion(hit.rect.center, "sm")
+        expl = Explosion(hit.rect.center, "sm", expl_anim)
         all_sprites.add(expl)
         #如果血量歸零
         if player.health <= 0:
-            death_expl = Explosion(player.rect.center, "player")
+            death_expl = Explosion(player.rect.center, "player", expl_anim)
             all_sprites.add(death_expl)
             player.lives -= 1
             player.health = 100
@@ -233,16 +184,22 @@ while running:
     #判斷護盾是否被擊中
     hits = pygame.sprite.groupcollide(shields, rocks, True, True)
     for hit in hits:
-        expl = Explosion(hit.rect.center, "lg")
+        expl = Explosion(hit.rect.center, "lg", expl_anim)
         all_sprites.add(expl)
         new_rock(level)
+
+    #判斷Boss是否被擊中
+    hits = pygame.sprite.spritecollide(boss_animes, bullets, True, pygame.sprite.collide_circle)
+    for hit in hits:
+        draw_text(screen, "擊中!", 25, WIDTH/2, 400)
     
-    #畫面顯示 
+    #畫面顯示
+    
     screen.fill(BLACK)
     screen.blit(background, (0, 0))
     all_sprites.draw(screen)
     draw_text(screen, str(score), 25, WIDTH/2, 10)
-    draw_health(screen, player.health, 5, 15)
+    draw_health(screen, player.health, player.rect.centerx-50, player.rect.centery + 40)
     draw_lives(screen, player.lives, lives_mini_img, WIDTH - 150, 20)
     pygame.display.update()
 

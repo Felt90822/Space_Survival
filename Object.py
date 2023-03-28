@@ -34,8 +34,8 @@ def draw_lives(surf, lives, img, x, y):
 def draw_health(surf, hp, x, y): #平面, 血量, 座標
     if hp < 0:
         hp = 0
-    BAR_LENGTH = 200 #生命條的長寬
-    BAR_HEIGHT = 20
+    BAR_LENGTH = 100 #生命條的長寬
+    BAR_HEIGHT = 10
     fill = (hp/100)*BAR_LENGTH
     if fill > BAR_LENGTH:
         fill = BAR_LENGTH
@@ -118,7 +118,7 @@ class Rock(pygame.sprite.Sprite):
         #self.image.fill(RED)
         self.rect = self.image.get_rect()
         self.radius = int(self.rect.width * 0.85 / 2) #半徑
-        #pygame.draw.circle(self.image, RED, self.rect.center, self.radius)
+        pygame.draw.circle(self.image, RED, self.rect.center, self.radius)
         self.rect.x = random.randrange(0, WIDTH - self.rect.width)
         self.rect.y = random.randrange(-180, -150)
         self.speedy = random.randrange(2, 8)
@@ -170,7 +170,7 @@ class Power(pygame.sprite.Sprite):
 
 #護盾
 class SHIELD(pygame.sprite.Sprite):
-    def __init__(self, img, rect):
+    def __init__(self, img, center):
         pygame.sprite.Sprite.__init__(self)
         self.image = img
         self.image.set_colorkey(BLACK)
@@ -179,7 +179,7 @@ class SHIELD(pygame.sprite.Sprite):
         self.radius = 42 #護盾大小
         self.time = 0 #持續時間
         self.now = False
-        self.center = rect
+        self.center = center
 
     def update(self):
         now = pygame.time.get_ticks()
@@ -187,7 +187,92 @@ class SHIELD(pygame.sprite.Sprite):
         if self.now and now - self.time > 5000:
             self.kill()
         
-
     def power_on(self):
         self.now = True
         self.time = pygame.time.get_ticks()
+
+#爆炸動畫
+class Explosion(pygame.sprite.Sprite):
+    def __init__(self, center, size, expl_anim):
+        pygame.sprite.Sprite.__init__(self)
+        self.size = size
+        self.image = expl_anim[self.size][0]
+        self.expl_anim = expl_anim
+        self.rect = self.image.get_rect()
+        self.rect.center = center
+        self.frame = 0 #爆炸的第一張動畫
+        self.last_update = pygame.time.get_ticks() #最後一張圖片的時間
+        self.frame_rate = 50 #經過?毫秒後更新圖片
+
+    #操控
+    def update(self):
+        now = pygame.time.get_ticks()
+        if now - self.last_update > self.frame_rate: 
+            self.last_update = now
+            self.frame += 1
+            if self.frame == len(self.expl_anim[self.size]):
+                self.kill()
+            else:
+                self.image = self.expl_anim[self.size][self.frame]
+                center = self.rect.center
+                self.rect = self.image.get_rect()
+                self.rect.center = center
+
+#Boss動畫
+class Boss_anime(pygame.sprite.Sprite): 
+    def __init__(self, boss_anim):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = boss_anim[0]
+        self.boss_anim = boss_anim
+        self.rect = self.image.get_rect()
+        self.rect.center = (1500, 1500)
+        self.radius = 100 #半徑
+        self.health = 200 #血量
+        self.frame = 0 #爆炸的第一張動畫
+        self.last_update = pygame.time.get_ticks() #最後一張圖片的時間
+        self.frame_rate = 80 #經過?毫秒後更新圖片
+
+    #操控
+    def update(self):
+        self.rect.center = (410, 130)
+        now = pygame.time.get_ticks()
+        if now - self.last_update > self.frame_rate: 
+            self.last_update = now
+            self.frame += 1
+            if self.frame == len(self.boss_anim):
+                self.frame = 0
+            else:
+                self.image = self.boss_anim[self.frame]
+                center = self.rect.center
+                self.rect = self.image.get_rect()
+                self.rect.center = center
+
+#Boss預告動畫
+class BossComing(pygame.sprite.Sprite):
+    def __init__(self, img):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = img
+        self.image.set_colorkey(BLACK)
+        self.rect = self.image.get_rect()
+        self.rect.centery = HEIGHT/2
+        self.rect.centerx = WIDTH+500
+        self.speedx = 10
+
+    def update(self):
+        self.rect.centerx -= self.speedx
+        if self.rect.right < 0:
+            self.kill()
+
+#Boss本體
+class Boss(pygame.sprite.Sprite):
+    def __init__(self):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.Surface((700, 700))
+        self.image.fill(GREEN)
+        self.rect = self.image.get_rect()
+        self.rect.centerx = 400
+        self.rect.centery = 300
+        self.radius = 325 #半徑
+        self.health = 200 #血量
+        pygame.draw.circle(self.image, RED, self.rect.center, self.radius)
+

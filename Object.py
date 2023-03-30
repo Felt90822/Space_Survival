@@ -44,6 +44,20 @@ def draw_health(surf, hp, x, y): #平面, 血量, 座標
     pygame.draw.rect(surf, GREEN, fill_ract)
     pygame.draw.rect(surf, WHITE, outline_rect, 2) #無填滿
 
+#Boss生命值
+def draw_boss_health(surf, hp, x, y): #平面, 血量, 座標
+    if hp < 0:
+        hp = 0
+    BAR_LENGTH = 300 #生命條的長寬
+    BAR_HEIGHT = 20
+    fill = (hp/300)*BAR_LENGTH
+    if fill > BAR_LENGTH:
+        fill = BAR_LENGTH
+    outline_rect = pygame.Rect(x, y, BAR_LENGTH, BAR_HEIGHT) #白色外框
+    fill_ract = pygame.Rect(x, y, fill, BAR_HEIGHT) #綠色血條
+    pygame.draw.rect(surf, GREEN, fill_ract)
+    pygame.draw.rect(surf, WHITE, outline_rect, 3) #無填滿
+
 #玩家
 class Player(pygame.sprite.Sprite):
     def __init__(self, img):
@@ -265,14 +279,18 @@ class BossComing(pygame.sprite.Sprite):
 
 #Boss本體
 class Boss(pygame.sprite.Sprite):
-    def __init__(self):
+    def __init__(self, body):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.Surface((700, 700))
-        self.image.fill(GREEN)
+        self.image = body
+        self.image.set_colorkey(BLACK)
+        #self.image = pygame.Surface((700, 700))
+        #self.image.fill(GREEN)
         self.rect = self.image.get_rect()
-        self.rect.centerx = 400
-        self.rect.centery = 300
-        self.radius = 325 #半徑
-        self.health = 200 #血量
-        pygame.draw.circle(self.image, RED, self.rect.center, self.radius)
+        self.rect.center = (1500, 1500)
+        self.radius = 350 #半徑
+        self.health = 300 #血量
+        #pygame.draw.circle(self.image, RED, (self.rect.right/2-25, self.rect.bottom/2-25), self.radius)
 
+    def update(self):
+        self.rect.x = 50
+        self.rect.y = -500

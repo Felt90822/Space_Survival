@@ -36,6 +36,10 @@ lives_mini_img.set_colorkey(BLACK)
 shield_img = pygame.image.load(os.path.join("Game_img", "shield_img.png")).convert()
 #載入Boss預告
 boss_coming = pygame.image.load(os.path.join("Game_img", "boss_attact.png")).convert()
+#boss碰撞
+boss_body = pygame.image.load(os.path.join("Game_img", "boss_body.png")).convert()
+#boss受到攻擊
+boss_harm = pygame.image.load(os.path.join("Game_img", "boss_angry.png")).convert()
  
 #爆炸動畫
 expl_anim = {}
@@ -96,12 +100,13 @@ def shoot():
 all_sprites = pygame.sprite.Group()
 player = Player(player_img)
 boss_animes =  Boss_anime(boss_anim)
+boss = Boss(boss_body)
 bullets = pygame.sprite.Group()
 powers = pygame.sprite.Group()
 shields = pygame.sprite.Group()
 all_sprites.add(player)
 
-level = 1
+level = 2
 #石頭的群組
 rocks = pygame.sprite.Group()
 for i in range(7):
@@ -111,6 +116,7 @@ score = 0
 running = True
 Boss_show = True
 
+#遊戲運行
 while running:
     clock.tick(FPS) #60次/秒
 
@@ -125,13 +131,12 @@ while running:
     #更新遊戲
     all_sprites.update()
 
-    if score > 200 and Boss_show:
+    if level == 2 and Boss_show:
         level = 2
+        all_sprites.add(boss)
         coming = BossComing(boss_coming)
         all_sprites.add(coming) 
         all_sprites.add(boss_animes)
-        #boss = Boss()
-        #all_sprites.add(boss)
         Boss_show = False
     
     if score > 1000:
@@ -189,9 +194,14 @@ while running:
         new_rock(level)
 
     #判斷Boss是否被擊中
-    hits = pygame.sprite.spritecollide(boss_animes, bullets, True, pygame.sprite.collide_circle)
+    hits = pygame.sprite.spritecollide(boss, bullets, True, pygame.sprite.collide_circle)
     for hit in hits:
-        draw_text(screen, "擊中!", 25, WIDTH/2, 400)
+        boss.health -= 10
+        if boss.health == 0:
+            all_sprites.remove(boss)
+            boss.rect.center = (1500, 1500)
+            all_sprites.remove(boss_animes)
+
     
     #畫面顯示
     
@@ -199,7 +209,8 @@ while running:
     screen.blit(background, (0, 0))
     all_sprites.draw(screen)
     draw_text(screen, str(score), 25, WIDTH/2, 10)
-    draw_health(screen, player.health, player.rect.centerx-50, player.rect.centery + 40)
+    draw_health(screen, player.health, player.rect.centerx-50, player.rect.centery + 50)
+    draw_boss_health(screen, boss.health, 10, 10)
     draw_lives(screen, player.lives, lives_mini_img, WIDTH - 150, 20)
     pygame.display.update()
 

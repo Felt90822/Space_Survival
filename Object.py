@@ -240,8 +240,6 @@ class Boss_anime(pygame.sprite.Sprite):
         self.boss_anim = boss_anim
         self.rect = self.image.get_rect()
         self.rect.center = (1500, 1500)
-        self.radius = 100 #半徑
-        self.health = 200 #血量
         self.frame = 0 #爆炸的第一張動畫
         self.last_update = pygame.time.get_ticks() #最後一張圖片的時間
         self.frame_rate = 80 #經過?毫秒後更新圖片
@@ -294,3 +292,36 @@ class Boss(pygame.sprite.Sprite):
     def update(self):
         self.rect.x = 50
         self.rect.y = -500
+
+#Boss受傷
+class BossHarm(pygame.sprite.Sprite):
+    def __init__(self, boss_img):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = boss_img
+        self.image.set_colorkey(BLACK)
+        self.rect = self.image.get_rect()
+        self.rect.center = (1500, 1500)
+        self.last_update = pygame.time.get_ticks()
+        self.frame_rate = 200
+
+    def update(self):
+        self.rect.center = (410, 130)
+        now = pygame.time.get_ticks()
+        if now - self.last_update > self.frame_rate: 
+            self.kill()
+
+#Boss攻擊
+class BossAttack(pygame.sprite.Sprite):
+    def __init__(self, x, y, boss_attack):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.Surface((50, 50))
+        self.image.fill(GREEN)
+        self.rect = self.image.get_rect()
+        self.rect.centerx = x
+        self.rect.bottom = y
+        self.speedy = 8
+
+    def update(self):
+        self.rect.y += self.speedy
+        if self.rect.bottom < 0:
+            self.kill()

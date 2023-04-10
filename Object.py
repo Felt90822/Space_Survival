@@ -50,7 +50,7 @@ def draw_boss_health(surf, hp, x, y): #平面, 血量, 座標
         hp = 0
     BAR_LENGTH = 300 #生命條的長寬
     BAR_HEIGHT = 20
-    fill = (hp/300)*BAR_LENGTH
+    fill = (hp/500)*BAR_LENGTH
     if fill > BAR_LENGTH:
         fill = BAR_LENGTH
     outline_rect = pygame.Rect(x, y, BAR_LENGTH, BAR_HEIGHT) #白色外框
@@ -132,7 +132,7 @@ class Rock(pygame.sprite.Sprite):
         #self.image.fill(RED)
         self.rect = self.image.get_rect()
         self.radius = int(self.rect.width * 0.85 / 2) #半徑
-        pygame.draw.circle(self.image, RED, self.rect.center, self.radius)
+        #pygame.draw.circle(self.image, RED, self.rect.center, self.radius)
         self.rect.x = random.randrange(0, WIDTH - self.rect.width)
         self.rect.y = random.randrange(-180, -150)
         self.speedy = random.randrange(2, 8)
@@ -286,38 +286,38 @@ class Boss(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = (1500, 1500)
         self.radius = 350 #半徑
-        self.health = 300 #血量
+        self.health = 500 #血量
         #pygame.draw.circle(self.image, RED, (self.rect.right/2-25, self.rect.bottom/2-25), self.radius)
 
     def update(self):
         self.rect.x = 50
         self.rect.y = -500
 
-#Boss受傷
+#Boss受傷、攻擊
 class BossHarm(pygame.sprite.Sprite):
-    def __init__(self, boss_img):
+    def __init__(self, boss_img, rate):
         pygame.sprite.Sprite.__init__(self)
         self.image = boss_img
         self.image.set_colorkey(BLACK)
         self.rect = self.image.get_rect()
         self.rect.center = (1500, 1500)
         self.last_update = pygame.time.get_ticks()
-        self.frame_rate = 200
+        self.frame_rate = rate
 
     def update(self):
         self.rect.center = (410, 130)
         now = pygame.time.get_ticks()
-        if now - self.last_update > self.frame_rate: 
+        if now - self.last_update > self.frame_rate:
             self.kill()
 
 #Boss攻擊
 class BossAttack(pygame.sprite.Sprite):
-    def __init__(self, x, y, boss_attack):
+    def __init__(self, y, img):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.Surface((50, 50))
-        self.image.fill(GREEN)
+        self.image = img
+        self.image.set_colorkey(BLACK)
         self.rect = self.image.get_rect()
-        self.rect.centerx = x
+        self.rect.centerx = random.randrange(200, 700)
         self.rect.bottom = y
         self.speedy = 8
 

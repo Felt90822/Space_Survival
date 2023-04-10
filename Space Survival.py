@@ -42,6 +42,8 @@ boss_body = pygame.image.load(os.path.join("Game_img", "boss_body.png")).convert
 boss_harm = pygame.image.load(os.path.join("Game_img", "bossdamage.png")).convert()
 #攻擊圖片
 boss_attack = pygame.image.load(os.path.join("Game_img", "boss_attack.png")).convert()
+#Boss子彈
+boss_bullet = pygame.image.load(os.path.join("Game_img", "bossbullet.png")).convert()
  
 #爆炸動畫
 expl_anim = {}
@@ -81,10 +83,12 @@ def new_rock(level):
     if level == 1:
         all_sprites.add(r)
         rocks.add(r)
+    else:
+        all_sprites.remove(r)
 
 #攻擊
 def Attack():
-    a = BossAttack(boss.rect.centerx, boss.rect.bottom, boss_attack)
+    a = BossAttack(boss.rect.bottom, boss_bullet)
     all_sprites.add(a)
     attacks.add(a)
          
@@ -96,13 +100,24 @@ def shoot():
             all_sprites.add(bullet)
             bullets.add(bullet)
 
-        elif player.gun >= 2:
+        elif player.gun == 2:
             bullet1 = Bullet(player.rect.left, player.rect.centery, bullet_img)
             bullet2 = Bullet(player.rect.right, player.rect.centery, bullet_img)
             all_sprites.add(bullet1)
             all_sprites.add(bullet2)
             bullets.add(bullet1)
             bullets.add(bullet2)
+
+        elif player.gun >= 3:
+            bullet1 = Bullet(player.rect.centerx-30, player.rect.centery, bullet_img)
+            bullet2 = Bullet(player.rect.centerx, player.rect.centery, bullet_img)
+            bullet3 = Bullet(player.rect.centerx+30, player.rect.centery, bullet_img)
+            all_sprites.add(bullet1)
+            all_sprites.add(bullet2)
+            all_sprites.add(bullet3)
+            bullets.add(bullet1)
+            bullets.add(bullet2)
+            bullets.add(bullet3)
        
 #群組
 all_sprites = pygame.sprite.Group()
@@ -113,19 +128,20 @@ bullets = pygame.sprite.Group()
 powers = pygame.sprite.Group()
 shields = pygame.sprite.Group()
 attacks = pygame.sprite.Group()
+rocks = pygame.sprite.Group()
 all_sprites.add(player)
 
-level = 2
+level = 1
 #石頭的群組
-rocks = pygame.sprite.Group()
-for i in range(7):
+for i in range(15):
     new_rock(level)
 
 score = 0
 running = True
 Boss_show = True
-Boss_coordinatex = 10
-Boss_coordinatey = 10
+Boss_coordinatex = 1500
+Boss_coordinatey = 1500
+last_update = 0
 
 #遊戲運行
 while running:
@@ -143,27 +159,33 @@ while running:
     #更新遊戲
     all_sprites.update()
 
-    if level == 2 and Boss_show:
+    #Boss出現
+    if score>=1000 and Boss_show:
         level = 2
         all_sprites.add(boss)
         coming = BossComing(boss_coming)
         all_sprites.add(coming) 
         all_sprites.add(boss_animes)
+        Boss_coordinatex = 10
+        Boss_coordinatey = 10
         last_update = pygame.time.get_ticks()
+        player.hide()
         Boss_show = False
 
-    if level == 2 and now - last_update > 3500:
+    #Boss攻擊
+    if level == 2 and now - last_update > 2500 and boss.health>0:
+        attack_anim = BossHarm(boss_attack, 500)
+        all_sprites.add(attack_anim)
         Attack()
         last_update = pygame.time.get_ticks()
 
-    
     #判斷石頭被擊中
     hits = pygame.sprite.groupcollide(rocks, bullets, True, True)
     for hit in hits:
         score += hit.radius
         expl = Explosion(hit.rect.center, "lg", expl_anim)
         all_sprites.add(expl)
-        if random.random() > 0.9: #回傳0-1隨機數字
+        if random.random() > 0.8: #回傳0-1隨機數字
             power = Power(hit.rect.center, power_imgs)
             all_sprites.add(power)
             powers.add(power)
@@ -212,7 +234,7 @@ while running:
     hits = pygame.sprite.spritecollide(boss, bullets, True, pygame.sprite.collide_circle)
     for hit in hits:
         boss.health -= 10
-        bossharm = BossHarm(boss_harm)
+        bossharm = BossHarm(boss_harm, 200)
         all_sprites.add(bossharm)
         if boss.health == 0:
             all_sprites.remove(boss)
@@ -220,6 +242,20 @@ while running:
             all_sprites.remove(boss_animes)
             Boss_coordinatex = 1500
             Boss_coordinatey = 1500
+
+    #判斷飛船被boss擊中
+    hits = pygame.sprite.spritecollide(player, attacks, True)
+    for hit in hits:
+        player.health -= 50
+        expl = Explosion(hit.rect.center, "lg", expl_anim)
+        all_sprites.add(expl)
+        #如果血量歸零
+        if player.health <= 0:
+            death_expl = Explosion(player.rect.center, "player", expl_anim)
+            all_sprites.add(death_expl)
+            player.lives -= 1
+            player.health = 100
+            player.hide()
 
     #畫面顯示
     screen.fill(BLACK)

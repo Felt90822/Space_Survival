@@ -30,6 +30,13 @@ def draw_lives(surf, lives, img, x, y):
         img_rect.y = y
         surf.blit(img, img_rect) #畫出來
 
+#復活次數
+def draw_RockPic(surf, img, x, y):
+    img_rect = img.get_rect()
+    img_rect.x = x
+    img_rect.y = y
+    surf.blit(img, img_rect)
+
 #生命值
 def draw_health(surf, hp, x, y): #平面, 血量, 座標
     if hp < 0:

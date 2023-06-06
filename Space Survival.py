@@ -118,23 +118,26 @@ def shoot():
             bullets.add(bullet1)
             bullets.add(bullet2)
             bullets.add(bullet3)
-       
-#群組
-all_sprites = pygame.sprite.Group()
-player = Player(player_img)
-boss_animes =  Boss_anime(boss_anim)
-boss = Boss(boss_body)
-bullets = pygame.sprite.Group()
-powers = pygame.sprite.Group()
-shields = pygame.sprite.Group()
-attacks = pygame.sprite.Group()
-rocks = pygame.sprite.Group()
-all_sprites.add(player)
 
-level = 1
-#石頭的群組
-for i in range(15):
-    new_rock(level)
+#初始畫面
+def draw_init():
+    draw_text(screen, "太空生存戰 !!!", 64, WIDTH/2, HEIGHT/4)
+    draw_text(screen, "上下左右鍵移動飛船, 空白艦發射子彈", 22, WIDTH/2, HEIGHT/2)
+    draw_text(screen, "攻擊隕石,獲得道具並擊敗Boss", 22, WIDTH/2, HEIGHT/2+25)
+    draw_text(screen, "按任意鍵開始遊戲", 20, WIDTH/2, HEIGHT*3/4)
+    #畫出隕石
+    for i in range(len(rock_imgs)):
+        draw_RockPic(screen, rock_imgs[i], 150*i, 10)
+    pygame.display.update()
+    waiting = True
+    while waiting:
+        clock.tick(FPS) #60次/秒
+        #取得輸入
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+            elif event.type == pygame.KEYUP:
+                waiting = False
 
 score = 0
 running = True
@@ -142,9 +145,33 @@ Boss_show = True
 Boss_coordinatex = 1500
 Boss_coordinatey = 1500
 last_update = 0
+show_init = True
 
 #遊戲運行
 while running:
+    if show_init:
+        screen.blit(background, (0, 0))
+        draw_init()
+        show_init = False
+
+        #群組
+        all_sprites = pygame.sprite.Group()
+        player = Player(player_img)
+        boss_animes =  Boss_anime(boss_anim)
+        boss = Boss(boss_body)
+        bullets = pygame.sprite.Group()
+        powers = pygame.sprite.Group()
+        shields = pygame.sprite.Group()
+        attacks = pygame.sprite.Group()
+        rocks = pygame.sprite.Group()
+        all_sprites.add(player)
+        level = 1
+        #石頭的群組
+        for i in range(20):
+            new_rock(level)
+        #分數
+        score = 0
+
     now = pygame.time.get_ticks()
     clock.tick(FPS) #60次/秒
 
@@ -154,13 +181,13 @@ while running:
             running = False
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE:
-                shoot() 
+                shoot()
 
     #更新遊戲
     all_sprites.update()
 
     #Boss出現
-    if score>=1000 and Boss_show:
+    if score>=3000 and Boss_show:
         level = 2
         all_sprites.add(boss)
         coming = BossComing(boss_coming)
@@ -185,7 +212,7 @@ while running:
         score += hit.radius
         expl = Explosion(hit.rect.center, "lg", expl_anim)
         all_sprites.add(expl)
-        if random.random() > 0.8: #回傳0-1隨機數字
+        if random.random() > 0.9: #回傳0-1隨機數字
             power = Power(hit.rect.center, power_imgs)
             all_sprites.add(power)
             powers.add(power)
@@ -230,13 +257,22 @@ while running:
         all_sprites.add(expl)
         new_rock(level)
 
+    #判斷護盾是否被Boss擊中
+    hits = pygame.sprite.groupcollide(shields, attacks, True, True)
+    for hit in hits:
+        expl = Explosion(hit.rect.center, "lg", expl_anim)
+        all_sprites.add(expl)
+
     #判斷Boss是否被擊中
     hits = pygame.sprite.spritecollide(boss, bullets, True, pygame.sprite.collide_circle)
     for hit in hits:
         boss.health -= 10
         bossharm = BossHarm(boss_harm, 200)
         all_sprites.add(bossharm)
-        if boss.health == 0:
+        #如果血量歸零
+        if boss.health <= 0:
+            death_expl = Explosion(player.rect.center, "player", expl_anim)
+            all_sprites.add(death_expl)
             all_sprites.remove(boss)
             boss.rect.center = (1500, 1500)
             all_sprites.remove(boss_animes)
@@ -256,6 +292,12 @@ while running:
             player.lives -= 1
             player.health = 100
             player.hide()
+
+    if player.lives == 0 and not(death_expl.alive()): #當生命 = 0 和 die物件不存在時
+        show_init = True
+
+    if boss.health == 0 and not(death_expl.alive()): #當Boss被擊敗時
+        show_init = True
 
     #畫面顯示
     screen.fill(BLACK)
